@@ -1,0 +1,26 @@
+services:
+  api:
+    build: .
+    container_name: kopi-api
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:16-alpine
+    container_name: kopi-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-kopi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kopi}
+      POSTGRES_DB: ${DB_NAME:-kopi}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
