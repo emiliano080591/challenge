@@ -12,11 +12,10 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 async def debate(
         payload: ChatRequest,
         service: DebateService = Depends(get_debate_service),
-        logger: Logger = Depends(get_logger)
+        logger: Logger = Depends(get_logger),
 ) -> ChatResponse:
     logger.info("POST /chat payload=%s", payload.model_dump())
     resp = service.handle(payload)
     last = resp.message[-1].message if resp.message else ""
     logger.info("POST /chat response last=%s", last[:120])
-
     return resp
