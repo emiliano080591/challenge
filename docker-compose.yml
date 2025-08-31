@@ -62,7 +62,25 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: kopi-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: kopi-promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
 
 volumes:
   pgdata:
   grafana-data:
+  loki-data:
