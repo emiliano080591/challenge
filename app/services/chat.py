@@ -1,10 +1,11 @@
-from typing import  Tuple
+from typing import Tuple
 from sqlalchemy.orm import Session
 
 from app.domain.schemas import ChatRequest, ChatResponse
 from app.respositories.sql import ConversationRepository, MessageRepository
 from app.domain.llm import DebateLLM
 from app.infrastructure.logging import logger
+from app.core.metrics import CONVERSATIONS_STARTED, MESSAGES_TOTAL
 
 
 class DebateService:
@@ -39,10 +40,13 @@ class DebateService:
     def handle(self, payload: ChatRequest) -> ChatResponse:
         logger.info("Nueva request: %s", payload.model_dump())
 
+        new_conv = False
         if not payload.conversation_id:
+            new_conv = True
             topic, stance = self._parse_topic_and_stance(payload.message)
             logger.debug("Creando conversación topic=%s stance=%s", topic, stance)
             conv = self.convs.create(topic=topic, stance=stance)
+            CONVERSATIONS_STARTED.inc()
         else:
             conv = self.convs.get(payload.conversation_id)
             if not conv:
@@ -51,6 +55,7 @@ class DebateService:
                 conv = self.convs.create(topic=topic, stance=stance)
 
         self.msgs.add(conv, role="user", content=payload.message)
+        MESSAGES_TOTAL.labels(role="user").inc()
 
         history = self.msgs.last_n(conv.id, n=10)
         logger.debug("Historial antes de LLM: %d", len(history))
@@ -59,6 +64,7 @@ class DebateService:
         logger.debug("LLM respuesta previa: %s", reply[:120])
 
         self.msgs.add(conv, role="bot", content=reply)
+        MESSAGES_TOTAL.labels(role="bot").inc()
 
         recent = self.msgs.last_n(conv.id, n=10)
         logger.info("Respuesta generada (len=%d)", len(reply))

@@ -4,6 +4,7 @@ from openai import OpenAI, APIConnectionError, APIError, RateLimitError
 from app.core.config import settings
 from app.domain import models
 from app.infrastructure.logging import logger
+from app.core.metrics import OPENAI_REQUESTS, OPENAI_LATENCY, OPENAI_TOKENS, Timer
 
 
 class OpenAIDebateLLM:
@@ -13,7 +14,6 @@ class OpenAIDebateLLM:
         self.temperature = getattr(settings, "OPENAI_TEMPERATURE", 0.3)
         self.max_tokens = getattr(settings, "OPENAI_MAX_TOKENS", 350)
 
-    # ==== prompt y armado de mensajes ====
     def _system_prompt(self, topic: str, stance: str) -> str:
         return f"""
             Eres un bot de debate profesional.
@@ -41,25 +41,47 @@ class OpenAIDebateLLM:
             messages.append({"role": role, "content": m.content})
         return messages
 
-    # ==== Único método público ====
     def reply(self, *, topic: str, stance: str, history: List[models.Message]) -> str:
         messages = self._pack_messages(topic=topic, stance=stance, history=history)
         logger.debug("OpenAI payload msgs=%d", len(messages))
         try:
-            resp = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-            )
-            text = (resp.choices[0].message.content or "").strip()
-            logger.debug("OpenAI reply(len=%d)", len(text))
+            with Timer() as t:
+                resp = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                )
+            OPENAI_LATENCY.observe(t.elapsed)
+            OPENAI_REQUESTS.labels(status="ok", error_type="").inc()
+
+            choice = resp.choices[0]
+            text = (choice.message.content or "").strip()
+
+            # Si el SDK retorna usage, regístralo
+            usage = getattr(resp, "usage", None)
+            if usage:
+                if getattr(usage, "prompt_tokens", None) is not None:
+                    OPENAI_TOKENS.labels(kind="prompt").inc(usage.prompt_tokens)
+                if getattr(usage, "completion_tokens", None) is not None:
+                    OPENAI_TOKENS.labels(kind="completion").inc(usage.completion_tokens)
+                if getattr(usage, "total_tokens", None) is not None:
+                    OPENAI_TOKENS.labels(kind="total").inc(usage.total_tokens)
+
             return text
-        except (RateLimitError, APIConnectionError, APIError) as e:
-            logger.exception("OpenAI error: %s", e)
-            return ("Mantengo mi postura. No puedo ampliar ahora por un problema temporal, "
-                    "pero avancemos con los argumentos ya planteados. ¿Qué parte cuestionas más?")
+
+        except RateLimitError as e:
+            OPENAI_REQUESTS.labels(status="error", error_type="rate_limit").inc()
+            logger.exception("OpenAI rate limit")
+        except APIConnectionError as e:
+            OPENAI_REQUESTS.labels(status="error", error_type="conn").inc()
+            logger.exception("OpenAI connection error")
+        except APIError as e:
+            OPENAI_REQUESTS.labels(status="error", error_type="api").inc()
+            logger.exception("OpenAI API error")
         except Exception as e:
-            logger.exception("OpenAI unexpected error: %s", e)
-            return ("Mantengo mi postura. No puedo responder en este momento, "
-                    "pero puedo reformular el argumento. ¿Qué punto quieres discutir?")
+            OPENAI_REQUESTS.labels(status="error", error_type="unexpected").inc()
+            logger.exception("OpenAI unexpected error")
+
+        return ("Mantengo mi postura. No puedo responder ahora por un problema temporal, "
+                "pero sigamos con los argumentos ya planteados. ¿Qué parte cuestionas más?")

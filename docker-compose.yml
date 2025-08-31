@@ -1,26 +1,37 @@
 services:
-  api:
-    build: .
-    container_name: kopi-api
-    env_file: .env
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    volumes:
-      - .:/app
-
   db:
     image: postgres:16-alpine
     container_name: kopi-db
     environment:
-      POSTGRES_USER: ${DB_USER:-kopi}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-kopi}
-      POSTGRES_DB: ${DB_NAME:-kopi}
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: kopi
+      POSTGRES_USER: kopi
+      POSTGRES_PASSWORD: kopi
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kopi -d kopi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    container_name: kopi-api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://kopi:kopi@db:5432/kopi
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    # Para desarrollo con autoreload, descomenta el volumen y cambia el CMD si gustas
+    # volumes:
+    #   - ./:/app
+    # command: ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000","--reload"]
 
 volumes:
   pgdata:
