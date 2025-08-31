@@ -1,0 +1,166 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.4.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series" },
+    { "type": "panel", "id": "stat", "name": "Stat" },
+    { "type": "panel", "id": "bargauge", "name": "Bar gauge" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "2.0.0" }
+  ],
+  "title": "Kopi Debate Bot — Overview",
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "refresh": 2,
+        "query": "label_values(up, job)",
+        "current": { "selected": true, "text": "kopi-api", "value": "kopi-api" }
+      },
+      {
+        "name": "interval",
+        "type": "custom",
+        "query": "1m,5m,15m",
+        "current": { "selected": true, "text": "5m", "value": "5m" }
+      }
+    ]
+  },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Conversations / min",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "rate(kopi_conversations_started_total[$interval])", "legendFormat": "started", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages / min (by role)",
+      "gridPos": { "h": 6, "w": 12, "x": 6, "y": 0 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "sum by (role) (rate(kopi_messages_total[$interval]))", "legendFormat": "{{role}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "OpenAI requests / min (status, error_type)",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "sum by (status, error_type) (rate(kopi_openai_requests_total[$interval]))", "legendFormat": "{{status}} {{error_type}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "OpenAI latency p95 (s)",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 6 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kopi_openai_latency_seconds_bucket[$interval])) by (le))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "OpenAI tokens / min",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 6 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "sum by (kind) (rate(kopi_openai_tokens_total[$interval]))", "legendFormat": "{{kind}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP latency p95 by endpoint (s)",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 6 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, handler) (rate(http_request_duration_seconds_bucket[$interval])))",
+          "legendFormat": "{{handler}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP requests / s by status",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 13 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "sum by (status) (rate(http_requests_total[$interval]))", "legendFormat": "status {{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "DB query duration p95 (s)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 13 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kopi_db_query_seconds_bucket[$interval])) by (le))",
+          "legendFormat": "db p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Chat requests /s by status",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 20 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        { "expr": "sum by (status) (rate(kopi_chat_requests_total[$interval]))", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Chat payload size p95 (bytes)",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 20 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kopi_chat_payload_bytes_bucket[$interval])) by (le))",
+          "legendFormat": "p95 payload",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Chat response size p95 (chars)",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 20 },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kopi_chat_response_chars_bucket[$interval])) by (le))",
+          "legendFormat": "p95 response",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["5s","10s","30s","1m","5m"] }
+}
