@@ -1,0 +1,75 @@
+@startuml KopiSequence
+title POST chat — main flow
+
+actor "Client" as client
+participant "API" as api
+database "DB\n(Postgres/SQLite)" as DB
+participant "OpenAI" as openai
+participant "Prometheus" as Prom
+
+activate client
+client -> api : **[POST]** /api/chat
+activate api
+api -> api : validate payload
+
+group <font color=red> Unprocessable Entity
+    api -[#red]> api : <color:red>Invalid payload
+    api -[#red]> client : <color:red> 422 Unprocessable Entity
+end
+
+group <font color=blue> If conversation_id==null
+    api -> DB : Save message
+    activate DB
+    group <font color=red> Database error
+        DB-[#red]>api: <color:red>Database error
+        api-[#red]>Prom: <color:red>Send metric with error
+        activate Prom
+        deactivate Prom
+        api-[#red]>client: <color:red> 500 Internal Server Error
+    end
+    DB->api: conversation_id
+    deactivate DB
+end
+group <font color=blue> If conversation_id!=null
+    api -> DB : Get conversation
+    activate DB
+    group <font color=red> Database error
+        DB-[#red]>api: <color:red>Database error
+        api-[#red]>Prom: <color:red>Send metric with error
+        activate Prom
+        deactivate Prom
+        api-[#red]>client: <color:red> 500 Internal Server Error
+    end
+    api -> DB : Save new message
+    DB->api: conversation_id
+    deactivate DB
+end
+
+api ->api: Build prompt
+api -> openai: Send message
+activate openai
+group <font color=red> OpenAI error
+    openai-[#red]>api:<color:red>error
+    api-[#red]>client:<color:red>500 Internal Server Error
+end
+openai->api : conversation
+deactivate openai
+api->DB: Save openai response
+activate DB
+group <font color=red> Database error
+    DB-[#red]>api: <color:red>Database error
+    api-[#red]>Prom: <color:red>Send metric with error
+    activate Prom
+    deactivate Prom
+    api-[#red]>client: <color:red> 500 Internal Server Error
+end
+DB->api: conversation_id
+deactivate DB
+api->api: build response \nwith short history
+api->Prom: send metric
+activate Prom
+deactivate Prom
+api-[#green]>client:<color:green> 200 OK : message
+deactivate api
+deactivate client
+@enduml

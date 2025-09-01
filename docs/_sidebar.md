@@ -1,0 +1,5 @@
+- [Arquitectura](arquitectura.md)
+  - [Diagramas](arquitectura.md#diagramas)
+    - [Diagrama de Componente](arquitectura.md#diagrama-de-componentes)
+    - [Diagrama de Secuencia](arquitectura.md#diagrama-de-secuencia)
+  - [ADR de decisiones](adrs/adr-0001.md)
