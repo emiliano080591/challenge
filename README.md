@@ -214,8 +214,8 @@ Cómo acceder
 http://localhost:3001
 ```
 * Homepage: sección Arquitectura, con:
-  - Diagrama de Componentes (PlantUML → Kroki).
-  - Diagrama de Secuencia de /chat.
+  - Diagrama de Componentes (Excalidraw).
+  - Diagrama de Secuencia de /chat (PlantUML).
   - ADR-0001 con decisiones de arquitectura.
 
 ![doc](docs/images/docsify.png)
