@@ -79,6 +79,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-config.yaml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
+  docs:
+    image: node:18-alpine
+    container_name: kopi-docs
+    working_dir: /app
+    volumes:
+      - ./docs:/app/docs:ro
+    command: sh -c "npm i -g docsify-cli && docsify serve docs -p 3001"
+    ports:
+      - "3001:3001"
 
 volumes:
   pgdata:

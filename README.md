@@ -203,7 +203,25 @@ o para continuar:
 
 ---
 
-## 9) Makefile (atajos)
+## 9) Documentación de la aplicación
+
+La documentación técnica de Debate Bot se sirve con Docsify
+, que convierte archivos Markdown en un sitio estático.
+
+Cómo acceder
+* Local con Docker Compose (puerto 3001):
+```arduino
+http://localhost:3001
+```
+* Homepage: sección Arquitectura, con:
+  - Diagrama de Componentes (PlantUML → Kroki).
+  - Diagrama de Secuencia de /chat.
+  - ADR-0001 con decisiones de arquitectura.
+
+![doc](docs/images/docsify.png)
+--- 
+
+## 10) Makefile (atajos)
 ```bash
 make up        # levanta todo
 make ps        # estado
