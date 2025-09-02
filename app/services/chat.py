@@ -9,11 +9,6 @@ from app.core.metrics import CONVERSATIONS_STARTED, MESSAGES_TOTAL
 
 
 class DebateService:
-    """
-    Orquesta: parsea, persiste, lee historial y delega al LLM.
-    Nada de prompts ni SDKs aquí.
-    """
-
     def __init__(self, db: Session, llm: DebateLLM):
         self.db = db
         self.convs = ConversationRepository(db)
