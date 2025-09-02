@@ -61,7 +61,7 @@ make ps        # estado de servicios
 make logs      # logs en vivo
 make down      # baja servicios
 make clean     # baja y elimina volúmenes (resetea DB y Grafana)
-
+make test      # ejecuta los tests con pytest"
 ```
 
 Manual, si prefieres:
