@@ -17,7 +17,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Código
 COPY app /app/app
-COPY .env ./
 
 RUN useradd -m appuser
 USER appuser
