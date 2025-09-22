@@ -10,14 +10,11 @@ from app.services.chat import DebateService
 
 DBSession = Annotated[Session, Depends(get_db)]
 
-
 def get_logger() -> Logger:
     return logger
 
-
 def get_debate_llm() -> OpenAIDebateLLM:
-    return OpenAIDebateLLM()
-
-
+    from app.main import app
+    return app.state.debate_llm  
 def get_debate_service(db: DBSession, llm: OpenAIDebateLLM = Depends(get_debate_llm)) -> DebateService:
     return DebateService(db=db, llm=llm)

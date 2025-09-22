@@ -6,7 +6,7 @@ from app.respositories.sql import ConversationRepository, MessageRepository
 from app.domain.llm import DebateLLM
 from app.infrastructure.logging import logger
 from app.core.metrics import CONVERSATIONS_STARTED, MESSAGES_TOTAL
-
+from app.domain.errors import NotFoundError  # <---
 
 class DebateService:
     def __init__(self, db: Session, llm: DebateLLM):
@@ -35,19 +35,15 @@ class DebateService:
     def handle(self, payload: ChatRequest) -> ChatResponse:
         logger.info("Nueva request: %s", payload.model_dump())
 
-        new_conv = False
-        if not payload.conversation_id:
-            new_conv = True
+        if payload.conversation_id:
+            conv = self.convs.get(payload.conversation_id)
+            if not conv:
+                raise NotFoundError(f"Conversation {payload.conversation_id} not found")
+        else:
             topic, stance = self._parse_topic_and_stance(payload.message)
             logger.debug("Creando conversación topic=%s stance=%s", topic, stance)
             conv = self.convs.create(topic=topic, stance=stance)
             CONVERSATIONS_STARTED.inc()
-        else:
-            conv = self.convs.get(payload.conversation_id)
-            if not conv:
-                topic, stance = self._parse_topic_and_stance(payload.message)
-                logger.warning("Conversation %s no encontrada; creando nueva", payload.conversation_id)
-                conv = self.convs.create(topic=topic, stance=stance)
 
         self.msgs.add(conv, role="user", content=payload.message)
         MESSAGES_TOTAL.labels(role="user").inc()
@@ -66,5 +62,5 @@ class DebateService:
 
         return ChatResponse(
             conversation_id=conv.id,
-            message=[{"role": m.role, "content": m.content} for m in recent]
+            message=[{"role": m.role, "message": m.content} for m in recent]
         )

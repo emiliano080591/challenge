@@ -41,6 +41,8 @@ def test_handle_existing_conversation(db_session: Session, stub_llm_ok):
 
     assert resp.conversation_id == cid
     assert len(resp.message) == 4
+    assert resp.message[-1].role == "bot"
+    assert isinstance(resp.message[-1].message, str)
 
 
 def test_llm_failure_propagates(db_session: Session, stub_llm_fail):

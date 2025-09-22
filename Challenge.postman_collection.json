@@ -1,0 +1,95 @@
+{
+	"info": {
+		"_postman_id": "7a2e7c3f-c6d3-42c0-9d23-dc039fd134e8",
+		"name": "Challenge",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17340257"
+	},
+	"item": [
+		{
+			"name": "chat",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"conversation_id\": \"884bfe8cbd05410c8ab2d7337a7f6328\", \n    \"message\": \"Topic: Espacio; Stance: Por que entonces no han ido de nuevo a la luna?\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{produccion}}/api/chat",
+					"host": [
+						"{{produccion}}"
+					],
+					"path": [
+						"api",
+						"chat"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "health",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"conversation_id\": \"884bfe8cbd05410c8ab2d7337a7f6328\", \n    \"message\": \"Topic: Espacio; Stance: Por que entonces no han ido de nuevo a la luna?\"\n}"
+				},
+				"url": {
+					"raw": "{{produccion}}/healthz",
+					"host": [
+						"{{produccion}}"
+					],
+					"path": [
+						"healthz"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "produccion",
+			"value": "https://challenge-aru1.onrender.com",
+			"type": "string"
+		},
+		{
+			"key": "local",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
